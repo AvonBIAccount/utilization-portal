@@ -7,7 +7,7 @@ name: Build and deploy Python app to Azure Web App - avonutilization
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -60,4 +60,4 @@ jobs:
         with:
           app-name: 'avonutilization'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_EE5D888CF42744D0959532BB45B4ADD7 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE}}
