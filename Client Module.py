@@ -10,7 +10,7 @@ from yaml.loader import SafeLoader
 
 #locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 image = Image.open('ClientModule.png')
-st.image(image, use_column_width=True)
+st.image(image, use_container_width=True)
 
 # st.title('Client Utilization Data')
 utilization_data = st.session_state['utilization_data']

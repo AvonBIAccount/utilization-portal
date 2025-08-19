@@ -3,45 +3,12 @@ import pandas as pd
 import pyodbc
 import datetime as dt
 import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
-import bcrypt
 import os
+
  
 st.set_page_config(page_title='PA Utilization Portal', layout='wide', initial_sidebar_state='expanded')
-
-# def load_config():
-#     with open('config.yaml') as file:
-#         config = yaml.load(file, Loader=SafeLoader)
-#     for user in config['credentials']['usernames']:
-#         password_env_var = config['credentials']['usernames'][user]['password'].strip('${}')
-#         config['credentials']['usernames'][user]['password'] = os.getenv(password_env_var)
-#     config['cookie']['key'] = os.getenv(config['cookie']['key'].strip('${}'))
-#     return config
-
-# config = load_config()
  
-# Load configuration from YAML file
-with open('config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-# Hash passwords if not already hashed
-for user in config['credentials']['usernames']:
-    plain_password = config['credentials']['usernames'][user]['password']
-    if not plain_password.startswith('$2b$'):
-        hashed_password = bcrypt.hashpw(plain_password.encode('utf-8'), bcrypt.gensalt())
-        config['credentials']['usernames'][user]['password'] = hashed_password.decode('utf-8')
- 
-# Instantiate the authenticator
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config.get('preauthorized', [])
-)
- 
-# # Database connection
+# Database connection
 # conn = pyodbc.connect(
 #         'DRIVER={ODBC Driver 17 for SQL Server};SERVER='
 #         +st.secrets['server']
@@ -94,83 +61,115 @@ conn1 = pyodbc.connect(
         + password1
         )
 
-def main():
-    # Initialize session state variables if they don't exist        
-    if 'authentication_status' not in st.session_state:
-        st.session_state['authentication_status'] = None
-    if 'name' not in st.session_state:
-        st.session_state['name'] = None
-    if 'username' not in st.session_state:
-        st.session_state['username'] = None
-
-    if st.session_state['authentication_status']:
-        st.title("PA Utilization Portal")
-        st.write(f"You are logged in as {st.session_state['name']} ({st.session_state['username']})")
-
-        #sidebar navigation
-        st.sidebar.title("Navigation")
-        if st.session_state['username'].startswith("admin"):
-            choice = st.sidebar.radio("Select Module", ["Enrollee Module", "Client Module","Provider Module", 'Report Module',
-                                                         "Enrollee After-Care Satisfaction Survey Module", "Referral Module"])
-        elif st.session_state['username'].startswith("contact"):
-            choice = st.sidebar.radio("Select Module", ["Enrollee Module", "Referral Module", "Enrollee After-Care Satisfaction Survey Module"])
-        elif st.session_state['username'].startswith("medical"):
-            choice = st.sidebar.radio("Select Module", ["Enrollee Module", "Provider Module"])
-        elif st.session_state['username'].startswith("audit"):
-            choice = st.sidebar.radio("Select Module", ["Enrollee Module", "Client Module", "Provider Module", "Report Module"])
+def login_user(username,password):
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT * from tbl_utilization_portal_users WHERE UserName = ?", username)
+        user = cursor.fetchone()
+        if user:
+            if password:
+                return user[1], user[2], user[4], user[6]
+            else:
+                return None, None, None, None
         else:
-            st.error('Access Denied: Invalid Role.')
-            return
+            return None, None, None, None
+        
+# Initialize session state variables if they don't exist
+if 'authentication_status' not in st.session_state:
+    st.session_state['authentication_status'] = None
+if 'name' not in st.session_state:
+    st.session_state['name'] = None
+if 'username' not in st.session_state:
+    st.session_state['username'] = None
+if 'password' not in st.session_state:
+    st.session_state['password'] = None
+if 'user_role' not in st.session_state:
+    st.session_state['user_role'] = None
 
-        # Dynamically load the module based on the username
-        try:
-            # Define a function to execute a module in a separate namespace
-            def execute_module(module_name):
-                with open(module_name) as file:
-                    module_code = file.read()
-                module_namespace = {'conn': conn, 'conn1':conn1, 'st': st, 'pd': pd, 'dt': dt}
-                exec(module_code, module_namespace)
-            if choice == "Enrollee Module":
-                execute_module("EnrolleeModule.py")
-            elif choice == "Referral Module":
-                execute_module("Referral Module.py")
-            elif choice == "Client Module":
-                execute_module("Client Module.py")
-            elif choice == "Provider Module":
-                execute_module("Provider Module.py")
-            elif choice == "Report Module":
-                execute_module("Report Module.py")
-            elif choice == "Enrollee After-Care Satisfaction Survey Module":
-                st.info("This module is under development.")
-                # execute_module("aftercaresurvey.py")
-            
-        except FileNotFoundError as e:
-            st.error(f"Error: {e}")
-        except Exception as e:
-            st.error(f"An unexpected error occurred: {e}")
 
-        # Add the logout button in the sidebar
-        with st.sidebar:
-            if authenticator.logout('Logout', 'main'):
-                st.session_state['name'] = None
-                st.session_state['authentication_status'] = None
-                st.session_state['username'] = None
-                st.experimental_rerun()
+if st.session_state['authentication_status']:
+    st.title("PA Utilization Portal")
+    st.success(f"Welcome {st.session_state['name']} 👋")
+    st.write(f"You are logged in as **{st.session_state['name']}** ({st.session_state['username']})")
+
+    #sidebar navigation
+    st.sidebar.title("Navigation")
+    if st.session_state['username'].startswith("admin"):
+        choice = st.sidebar.segmented_control("Select Module", ["Enrollee Module", "Client Module","Provider Module", 'Report Module',
+                                                        "Enrollee After-Care Satisfaction Survey Module", "Referral Module"])
+    elif st.session_state['username'].startswith("contact"):
+        choice = st.sidebar.segmented_control("Select Module", ["Enrollee Module", "Referral Module"])
+    elif st.session_state['username'].startswith("medical"):
+        choice = st.sidebar.segmented_control("Select Module", ["Enrollee Module", "Provider Module"])
+    elif st.session_state['username'].startswith("audit"):
+        choice = st.sidebar.segmented_control("Select Module", ["Enrollee Module", "Client Module", "Provider Module", "Report Module"])
+    elif st.session_state['username'].startswith("luqman"):
+        choice = st.sidebar.segmented_control("Select Module", ["Enrollee Module", "Client Module", "Provider Module", "Report Module"])
     else:
-        # Display the login page
-        st.title("Home Page")
-        st.write("Login with your username and password to access the portal.")
-        name, authentication_status, username = authenticator.login('Login', 'main')
+        st.error('Access Denied: Invalid Role.')
+    
+        # --- Load Module Dynamically ---
+    try:
+        def execute_module(module_name):
+            with open(module_name) as file:
+                module_code = file.read()
+            module_namespace = {'conn': conn, 'conn1': conn1, 'st': st, 'pd': pd, 'dt': dt}
+            exec(module_code, module_namespace)
 
-        if authentication_status:
-            st.session_state['name'] = name
-            st.session_state['authentication_status'] = authentication_status
-            st.session_state['username'] = username
-            st.experimental_rerun()
-        elif authentication_status is False:
-            st.error("Username/password is incorrect")
-        elif authentication_status is None:
-            st.warning("Please enter your username and password")
+        if choice == "Enrollee Module":
+            execute_module("EnrolleeModule.py")
+        elif choice == "Referral Module":
+            execute_module("Referral Module.py")
+        elif choice == "Client Module":
+            execute_module("Client Module.py")
+        elif choice == "Provider Module":
+            execute_module("Provider Module.py")
+        elif choice == "Report Module":
+            execute_module("Report Module.py")
+        elif choice == "Enrollee After-Care Satisfaction Survey Module":
+            st.info("This module is under development.")
+            # execute_module("aftercaresurvey.py")
+        
+    except FileNotFoundError as e:
+        st.error(f"Error: {e}")
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
 
-if __name__ == "__main__":
-    main()
+    # --- Logout Button ---
+    # Add the logout button in the sidebar
+    with st.sidebar:
+        if st.button('Logout'):
+            st.session_state['name'] = None
+            st.session_state['authentication_status'] = None
+            st.session_state['username'] = None
+            st.rerun()
+
+elif st.session_state['authentication_status'] is False:
+    st.error("❌ Username/password is incorrect")
+
+elif st.session_state['authentication_status'] is None:
+    st.warning("⚠️ Please enter your username and password")
+
+#     # Display the login page
+    st.sidebar.title("Home Page")
+    st.sidebar.write("Welcome to the PA Utilization Portal!")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    
+    if st.button("Login"):
+        if username and password:  # only proceed if both are entered
+            login_username, name, user_role, login_password = login_user(username, password)
+
+            if username == login_username and password == login_password: 
+                st.session_state['authentication_status'] = True
+                st.session_state['name'] = name
+                st.session_state['username'] = login_username
+                st.session_state['password'] = login_password
+                st.session_state['user_role'] = user_role
+                st.rerun()
+            else:
+                st.warning("⚠️ Username/password is incorrect")
+        else:
+            st.info("ℹ️ Please enter both username and password")
+
+    
+    

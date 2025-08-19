@@ -7,7 +7,7 @@ import altair as alt
 from datetime import datetime, timedelta
 
 image = Image.open('ReportModule.png')
-st.image(image, use_column_width=True)
+st.image(image, use_container_width=True)
 
 st.title('Utilization Report')
 utilization_data = st.session_state['utilization_data']

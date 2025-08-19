@@ -7,7 +7,7 @@ from PIL import Image
 
 #locale.setlocale(locale.LC_ALL, 'en_US')
 image = Image.open('ProviderModule.png')
-st.image(image, use_column_width=True)
+st.image(image, use_container_width=True)
 
 # st.title('Provider Utilization Data')
 utilization_data = st.session_state['utilization_data']

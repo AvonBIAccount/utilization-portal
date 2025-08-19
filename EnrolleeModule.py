@@ -10,7 +10,7 @@ import os
 
 #locale.setlocale(locale.LC_ALL, 'en_US')
 image = Image.open('EnrolleModule.png')
-st.image(image, use_column_width=True)
+st.image(image, use_container_width=True)
 
 
 options = st.sidebar.radio('Module', options=['Enrollee Bio-Data', 'Enrollee Utilization Summary', 'Enrollee Benefit Limit'])
@@ -36,11 +36,19 @@ query1 = 'SELECT distinct * from utilization_portal_data'
 query2 = 'select distinct LoginMemberNo, DateCreated,  LastLoginDate, IsActive\
             from Users \
             where LastLoginDate is not null'
-query3 = 'select PolicyNo, PlanType, CancerCareLimit, GlassesLimit, MaternityLimit,OpticalCareLimit, DentalCareLimit,\
-            SurgeryLimit, TotalLimit, FromDate, ToDate\
-            from tblBenefitLimit'
+# query3 = 'select PolicyNo, PlanType, CancerCareLimit, GlassesLimit, MaternityLimit,OpticalCareLimit, DentalCareLimit,\
+#             SurgeryLimit, TotalLimit, FromDate, ToDate\
+#             from tblBenefitLimit'
+query3 = 'SELECT [PolicyNo] ,[Client] ,[PlanName] ,[ClassCode] ,[AdmissionLimit] ,[AdvancedInvestigationLimit], [AmbulanceServiceLimit] ,[AnnualHealthCheckLimit] ,[BloodTransfusionLimit],\
+       [CancerCareInvestigationsLimit] ,[ChronicDiseaseLimit] ,[ConsultationGeneralLimit] ,[ConsultationSpecialistLimit], [DentalCareLimit], [EmergencyCareLimit], [FamilyPlanningLimit],\
+       [FeedingLimit], [FertilityInvestigationsLimit], [GYMLimit], [HIVTreatmentLimit], [ImmunizationLimit], [IntensiveCareLimit], [SurgeryLimit], [LabInvestigations], [PostNatalCareLimit],\
+       [MentalHealthCareLimit], [MothersAdmissionForSCBULimit], [NeoNatalCareLimit], [NutritionistDieticianConsultationLimit], [OpticalCareLimit], [GlassesLimit], [PhysiotherapyLimit],\
+       (select top 1 MaternityLimit from tblBenefitLimit a where a.PolicyNo = b.PolicyNo and a.PlanType = b.PlanName) MaternityLimit,\
+       [DrugsLimit], [RadiologyLimit], [RenalDialysisLimit], [UltraSoundLimit], [AggregrateAnnualLimitPerMem] TotalLimit, [FromDate], [ToDate]\
+  FROM [dbo].[tbl_Current_Benefits_Limit] b\
+    where b.ToDate = (select max(ToDate) from [dbo].[tbl_Current_Benefits_Limit] c where b.PolicyNo = c.PolicyNo and b.PlanName = c.PlanName)'
 
-# # define the connection for the DBs when working on the local environment
+# define the connection for the DBs when working on the local environment
 # conn = pyodbc.connect(
 #         'DRIVER={ODBC Driver 17 for SQL Server};SERVER='
 #         +st.secrets['server']
@@ -101,12 +109,13 @@ def get_data_from_sql():
     utilization_data = pd.read_sql(query1, conn)
     app_data = pd.read_sql(query2, conn1)
     limit_df = pd.read_sql(query3, conn)
+    # new_limit_df = pd.read_sql(query4, conn)
     conn.close()
     return active_enrolees, utilization_data, app_data, limit_df
 
-active_enrollees, utilization_data, app_data, limit_df  = get_data_from_sql()
+active_enrollees, utilization_data, app_data, limit_df = get_data_from_sql()
 
-utilization_data['PAIssueDate'] = pd.to_datetime(utilization_data['PAIssueDate']).dt.date
+utilization_data['PAIssueDate'] = pd.to_datetime(utilization_data['PAIssueDate'])
 
 utilization_data['MemberNo'] = utilization_data['MemberNo'].astype(str)
 
@@ -216,12 +225,12 @@ def display_member_utilization(mem_id):
     elif options == 'Enrollee Benefit Limit':
         enrollee_benefit_limit = limit_df.loc[
                 (limit_df['PolicyNo'] == policyno) &
-                (limit_df['PlanType'] == plan)
+                (limit_df['PlanName'] == plan)
             ]
 
         # Extract and format benefit limits
         limits = {
-            "Cancer Care": format_value(enrollee_benefit_limit['CancerCareLimit'].iat[0]),
+            "Cancer Care": format_value(enrollee_benefit_limit['CancerCareInvestigationsLimit'].iat[0]),
             "Glasses": format_value(enrollee_benefit_limit['GlassesLimit'].iat[0]),
             "Maternity": format_value(enrollee_benefit_limit['MaternityLimit'].iat[0]),
             "Optical Care": format_value(enrollee_benefit_limit['OpticalCareLimit'].iat[0]),
