@@ -13,6 +13,9 @@ st.title('Utilization Report')
 utilization_data = st.session_state['utilization_data']
 active_enrollees = st.session_state['active_enrollees']
 
+# Ensure column is date type
+utilization_data['PAIssueDate'] = pd.to_datetime(utilization_data['PAIssueDate'])
+
 
 def aggregate_by_column(dataframe, date_column, groupby_column, sum_column,count_column, start_date, end_date):
     # Filter the dataframe by the selected date range
