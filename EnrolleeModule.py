@@ -48,7 +48,7 @@ query3 = 'SELECT [PolicyNo] ,[Client] ,[PlanName] ,[ClassCode] ,[AdmissionLimit]
   FROM [dbo].[tbl_Current_Benefits_Limit] b\
     where b.ToDate = (select max(ToDate) from [dbo].[tbl_Current_Benefits_Limit] c where b.PolicyNo = c.PolicyNo and b.PlanName = c.PlanName)'
 
-# define the connection for the DBs when working on the local environment
+# # define the connection for the DBs when working on the local environment
 # conn = pyodbc.connect(
 #         'DRIVER={ODBC Driver 17 for SQL Server};SERVER='
 #         +st.secrets['server']
@@ -71,8 +71,8 @@ query3 = 'SELECT [PolicyNo] ,[Client] ,[PlanName] ,[ClassCode] ,[AdmissionLimit]
 #         +st.secrets['password1']
 #         ) 
 
-#define the connections for the DBs when deployed to cloud
-#assign credentials for the avondw DB credentials
+# define the connections for the DBs when deployed to cloud
+# assign credentials for the avondw DB credentials
 server = os.environ.get('server_name')
 database = os.environ.get('db_name')
 username = os.environ.get('db_username')
@@ -155,8 +155,8 @@ def display_member_utilization(mem_id):
         st.write('No data found for the given member number')
         return
     
-    policy_start_date = pd.to_datetime(active_enrollees.loc[active_enrollees['MemberNo'] == mem_id, 'Policy Inception'].iat[0]).date()
-    policy_end_date = pd.to_datetime(active_enrollees.loc[active_enrollees['MemberNo'] == mem_id, 'Policy Expiry'].iat[0]).date()
+    policy_start_date = pd.to_datetime(active_enrollees.loc[active_enrollees['MemberNo'] == mem_id, 'Policy Inception'].iat[0])
+    policy_end_date = pd.to_datetime(active_enrollees.loc[active_enrollees['MemberNo'] == mem_id, 'Policy Expiry'].iat[0])
 
 
     member_pa_value = utilization_data.loc[

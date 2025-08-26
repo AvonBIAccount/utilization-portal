@@ -8,7 +8,7 @@ import os
  
 st.set_page_config(page_title='PA Utilization Portal', layout='wide', initial_sidebar_state='expanded')
  
-# Database connection
+# # Database connection
 # conn = pyodbc.connect(
 #         'DRIVER={ODBC Driver 17 for SQL Server};SERVER='
 #         +st.secrets['server']

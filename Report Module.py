@@ -16,7 +16,6 @@ active_enrollees = st.session_state['active_enrollees']
 # Ensure column is date type
 utilization_data['PAIssueDate'] = pd.to_datetime(utilization_data['PAIssueDate'])
 
-
 def aggregate_by_column(dataframe, date_column, groupby_column, sum_column,count_column, start_date, end_date):
     # Filter the dataframe by the selected date range
     filtered_df = dataframe[(dataframe[date_column] >= start_date) & (dataframe[date_column] <= end_date)]
@@ -278,6 +277,7 @@ if options == 'Overall Report':
             (utilization_data['New Approval Status'] == 'APPROVED'),
             ['AvonPaCode','Client','EnrolleeName','Sex','Relation', 'MemberNo','PlanName','ProviderName', 'State', 'ProviderManager', 'EncounterDate','PAIssueDate', 'Benefit','Diagnosis', 'Speciality', 'ServiceDescription', 'ApprovedPAAmount' ]
             ]
+
     
     if benefit == 'All':
         data = df
